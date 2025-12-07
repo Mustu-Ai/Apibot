@@ -2,39 +2,84 @@ import os
 import requests
 from flask import Flask, request, jsonify
 
-# --- إعداد المتغيرات ---
+# -----------------------------------------
+# إعداد المتغيرات
+# -----------------------------------------
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+if not BOT_TOKEN:
+    print("❌ تحذير: BOT_TOKEN غير مضبوط! يرجى وضعه في متغير البيئة.")
 TELEGRAM_API_BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/"
 
 app = Flask(__name__)
 
-
-# -----------------------------------------------------
-# 🎯 نقطة نهاية التوجيه العامة
-# -----------------------------------------------------
+# -----------------------------------------
+# الصفحة الرئيسية
+# -----------------------------------------
 @app.route("/")
 def home():
-    return jsonify({
+    return {
         "status": "running",
-        "endpoints": ["/publish", "/route_telegram/<method>"]
-    })
-@app.route("/route_telegram/<method_name>", methods=["GET", "POST"])
-def route_telegram(method_name):
+        "service": "Telegram Proxy Bridge",
+        "endpoints": ["/publish", "/route/<method>"]
+    }
+
+
+# -----------------------------------------
+# جسر عام لجميع أوامر Telegram API
+# -----------------------------------------
+@app.route("/route/<method>", methods=["GET", "POST"])
+def route(method):
 
     if not BOT_TOKEN:
         return jsonify({
             "ok": False,
-            "error_code": 500,
-            "description": "BOT_TOKEN is not configured"
+            "error": "BOT_TOKEN is missing"
         }), 500
 
-    url = TELEGRAM_API_BASE_URL + method_name
+    url = TELEGRAM_API_BASE_URL + method
 
-    # البيانات
-    data = request.form.to_dict() if request.form else (
-        request.get_json(silent=True) or {})
+    # قراءة البيانات
+    data = request.form.to_dict() if request.form else (request.get_json(silent=True) or {})
 
-    # الملفات (Telegram يريدها بهذه الصيغة)
+    # قراءة الملفات (Telegram يريدهم multipart/form-data)
+    files = {}
+    for key, file_storage in request.files.items():
+        files[key] = (
+            file_storage.filename,
+            file_storage.stream.read(),
+            file_storage.content_type
+        )
+
+    try:
+        resp = requests.post(url, data=data, files=files, timeout=20)
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "error": str(e)
+        }), 500
+
+
+# -----------------------------------------
+# مسار خاص بالنشر من HF
+# -----------------------------------------
+@app.route("/publish", methods=["POST"])
+def publish():
+
+    image_file = request.files.get("image")
+    method = "sendPhoto" if image_file else "sendMessage"
+
+    return route(method)
+
+
+# -----------------------------------------
+# التشغيل المحلي / Koyeb
+# -----------------------------------------
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    print(f"🚀 Running on port {port}")
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=port)    # الملفات (Telegram يريدها بهذه الصيغة)
     files = {}
     for key, file_storage in request.files.items():
         files[key] = (
@@ -73,4 +118,4 @@ def handle_publish_request():
 if __name__ == "__main__":
     # Replit يجب أن يستخدم البورت 8080 فقط
     port = 8080
-   #app.run(host="0.0.0.0", port=port)
+   app.run(host="0.0.0.0", port=port)
