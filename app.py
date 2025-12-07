@@ -8,77 +8,69 @@ TELEGRAM_API_BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/"
 
 app = Flask(__name__)
 
+
 # -----------------------------------------------------
-# 🎯 نقطة نهاية التوجيه العامة (للإحصائيات والوظائف الأخرى)
+# 🎯 نقطة نهاية التوجيه العامة
 # -----------------------------------------------------
+@app.route("/")
+def home():
+    return jsonify({
+        "status": "running",
+        "endpoints": ["/publish", "/route_telegram/<method>"]
+    })
 @app.route("/route_telegram/<method_name>", methods=["GET", "POST"])
 def route_telegram(method_name):
-    """
-    تقوم هذه النقطة بتمرير أي طلب مباشرة إلى Telegram Bot API.
-    (تستخدم لمهام مثل getChatMembersCount للإحصائيات).
-    """
-    
-    # التحقق من توفر مفتاح البوت
-    if not BOT_TOKEN:
-        return jsonify({"ok": False, "error_code": 500, "description": "BOT_TOKEN is not configured"}), 500
 
-    # بناء رابط Telegram API كاملاً
+    if not BOT_TOKEN:
+        return jsonify({
+            "ok": False,
+            "error_code": 500,
+            "description": "BOT_TOKEN is not configured"
+        }), 500
+
     url = TELEGRAM_API_BASE_URL + method_name
-    
-    # 1. جمع البيانات (Form data/JSON)
-    data = request.form.to_dict() if request.form else (request.get_json(silent=True) or {})
-    
-    # 2. جمع الملفات (إذا وجدت)
+
+    # البيانات
+    data = request.form.to_dict() if request.form else (
+        request.get_json(silent=True) or {})
+
+    # الملفات (Telegram يريدها بهذه الصيغة)
     files = {}
     for key, file_storage in request.files.items():
-        # يجب أن يكون القيمة tuple (filename, file_object, mimetype)
-        files[key] = (file_storage.filename, file_storage.stream, file_storage.content_type)
-        
+        files[key] = (
+            file_storage.filename,
+            file_storage.read(),  # مهم جدًا!
+            file_storage.content_type)
+
     try:
-        # إرسال الطلب إلى Telegram API
-        response = requests.post(url, data=data, files=files)
-        response.raise_for_status() # إلقاء استثناء لأكواد الحالة 4xx/5xx
-        
-        # تمرير الرد كما هو إلى مساحة التحليل/النشر
+        response = requests.post(url, data=data, files=files, timeout=15)
         return jsonify(response.json()), response.status_code
 
-    except requests.exceptions.HTTPError as e:
-        # تمرير رسالة الخطأ من Telegram إلى المساحة الطالبة
-        error_response = e.response.json()
-        return jsonify(error_response), e.response.status_code
-        
-    except Exception as e:
-        return jsonify({"ok": False, "description": f"Internal routing error: {str(e)}"}), 500
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "ok":
+            False,
+            "description":
+            f"Error contacting Telegram API: {str(e)}"
+        }), 500
+
 
 # -----------------------------------------------------
-# 🚀 نقطة نهاية مخصصة للنشر (لتسهيل رفع الصور)
+# 🚀 نقطة نهاية مخصصة للنشر
 # -----------------------------------------------------
 @app.route("/publish", methods=["POST"])
 def handle_publish_request():
-    """
-    نقطة نهاية مخصصة لاستقبال طلبات النشر مع الصور وتمريرها إلى Telegram.
-    (تستخدم method_name = 'sendPhoto' أو 'sendMessage')
-    """
-    
+
     image_file = request.files.get('image')
-    
-    # تحديد method_name: sendPhoto إذا وجدت صورة، و sendMessage للنص فقط
-    if image_file:
-        method = "sendPhoto"
-    else:
-        method = "sendMessage"
-        
-    # إعادة توجيه الطلب إلى نقطة النهاية العامة /route_telegram
-    # يتم ذلك عبر استدعاء الدالة مباشرةً، حيث ستقوم بالتعامل مع البيانات والملفات
+
+    method = "sendPhoto" if image_file else "sendMessage"
     return route_telegram(method)
 
 
 # -----------------------------------------------------
-# ⚙️ تشغيل التطبيق (لـ Render)
+# ⚙️ تشغيل التطبيق على Replit
 # -----------------------------------------------------
 if __name__ == "__main__":
-    # Render يستخدم متغير البيئة PORT لتحديد المنفذ
-    port = int(os.environ.get("PORT", 5000))
-    # عند استخدام gunicorn (الموصى به لـ Render): gunicorn app:app
-    # عند التشغيل المحلي أو باستخدام Start Command: python app.py
-    app.run(host="0.0.0.0", port=port)
+    # Replit يجب أن يستخدم البورت 8080 فقط
+    port = 8080
+   #app.run(host="0.0.0.0", port=port)
