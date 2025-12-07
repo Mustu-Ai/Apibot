@@ -31,10 +31,10 @@ def home():
 def route(method):
 
     if not BOT_TOKEN:
-        return jsonify({
+         return jsonify({
             "ok": False,
             "error": "BOT_TOKEN is missing"
-        }), 500
+         }), 500
 
     url = TELEGRAM_API_BASE_URL + method
 
