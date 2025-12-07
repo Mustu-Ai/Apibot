@@ -118,4 +118,4 @@ def handle_publish_request():
 if __name__ == "__main__":
     # Replit يجب أن يستخدم البورت 8080 فقط
     port = 8080
-   app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)
