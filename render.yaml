@@ -1,0 +1,28 @@
+services:
+  # تعريف خدمة ويب واحدة (جسر Telegram Proxy)
+  - type: web
+    name: telegram-proxy-bridge
+    # الاتصال بالمستودع الذي يحتوي على هذا الملف
+    repo: https://github.com/YourUsername/YourRepoName # استبدل هذا
+    branch: main # اسم الفرع
+    
+    # بيئة التشغيل
+    env: docker # استخدام Dockerfile لبيئة تحكم كاملة
+    
+    # حجم الخدمة (صغير ومناسب للجسر)
+    plan: starter 
+    
+    # المنطقة الجغرافية
+    region: oregon # اختر منطقة قريبة
+    
+    # أمر التشغيل (يجب أن يطابق CMD في Dockerfile أو Start Command)
+    # إذا كنت تستخدم Dockerfile، فقد لا تحتاج لهذا الحقل
+    # startCommand: gunicorn app:app
+
+    # متغيرات البيئة المطلوبة
+    envVars:
+      - key: BOT_TOKEN
+        sync: false # يجب عليك إدخال قيمة هذا المتغير يدوياً في واجهة Render
+      - key: PORT
+        value: 8080 # المنفذ الذي سيستمع عليه gunicorn
+        
