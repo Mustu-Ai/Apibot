@@ -27,7 +27,7 @@ def home():
 # جسر عام لجميع أوامر Telegram API
 # -----------------------------------------
 @app.route("/route_telegram/<method>", methods=["GET", "POST"])
-def route(method):
+def route_telegram(method):
 
     if not BOT_TOKEN:
         return jsonify({"ok": False, "error": "BOT_TOKEN missing"}), 500
@@ -61,7 +61,7 @@ def route(method):
 def publish():
     image_file = request.files.get("image")
     method = "sendPhoto" if image_file else "sendMessage"
-    return route(method)
+    return route_telegram(method)
 
 
 # -----------------------------------------
