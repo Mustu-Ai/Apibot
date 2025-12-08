@@ -1,3 +1,5 @@
+import socket
+print("Resolve test:", socket.gethostbyname("inappropriate-charmian-syriandevaloper-832bac33.koyeb.app"))
 import os
 import requests
 from flask import Flask, request, jsonify
