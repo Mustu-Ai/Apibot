@@ -19,14 +19,14 @@ def home():
     return {
         "status": "running",
         "service": "Telegram Proxy Bridge",
-        "endpoints": ["/publish", "/route/<method>"]
+        "endpoints": ["/publish", "/route_telegram/<method>"]
     }
 
 
 # -----------------------------------------
 # جسر عام لجميع أوامر Telegram API
 # -----------------------------------------
-@app.route("/route/<method>", methods=["GET", "POST"])
+@app.route("/route_telegram/<method>", methods=["GET", "POST"])
 def route(method):
 
     if not BOT_TOKEN:
