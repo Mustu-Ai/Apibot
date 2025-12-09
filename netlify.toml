@@ -1,14 +1,8 @@
 [build]
-# الأمر يوجه pip لتثبيت جميع المتطلبات (بما في ذلك requests) 
-# داخل مجلد الوظيفة route_telegram.
-command = "pip install -r requirements.txt --target netlify/functions/route_telegram"
+  command = "pip install -r requirements.txt --target netlify/functions/route_telegram"
 
-# لا يوجد 'publish' هنا، يتم تحديده ضمن [functions] تلقائياً
-
-# القسم الرئيسي لإعدادات الوظائف
 [functions]
-  # لا توجد إعدادات مباشرة هنا
+  directory = "netlify/functions"
 
-# الجدول الفرعي المطلوب لتكوين وقت تشغيل Python
 [functions.python]
   python_version = "3.10"
