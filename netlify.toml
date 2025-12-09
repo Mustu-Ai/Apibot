@@ -1,0 +1,10 @@
+[build]
+# الأمر الذي يتم تنفيذه قبل نشر التطبيق (لتثبيت المتطلبات)
+command = "pip install -r requirements.txt --target netlify/functions/route_telegram"
+publish = "netlify/functions" # المجلد الذي يحتوي على الوظائف
+
+[functions]
+# هذا هو مجلد الوظائف الذي تم إنشاؤه
+directory = "netlify/functions"
+# يجب أن يتطابق الإصدار مع الإصدار الذي تدعمه Netlify (عادةً 3.8 إلى 3.11)
+python_version = "3.10" 
